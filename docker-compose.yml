@@ -1,7 +1,7 @@
 
 
-# docker network create homeworks
-# docker network create keycloak
+#Before run docker compose file needs to run create-networks.sh and then can run this file 
+
 version: '2.9'
 services:
   db:
@@ -80,7 +80,7 @@ services:
       - keycloak
     ports:
       - '8080:8080'
-      - '8443:8080'
+      - '8443:8443'
     depends_on:
       - postgres
 volumes:
