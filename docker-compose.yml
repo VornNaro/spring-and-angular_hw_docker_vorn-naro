@@ -1,0 +1,98 @@
+
+
+# docker network create homeworks
+# docker network create keycloak
+version: '2.9'
+services:
+  db:
+    image: postgres:14.4-alpine
+    restart: always
+    container_name: homeworkdb
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=demodb
+    networks:
+      - homework
+    ports:
+      - '7432:5432'
+    volumes: 
+      - homeworkData:/var/lib/postgresql/data
+  postgres:
+    image: postgres:14.4-alpine
+    restart: always
+    container_name: keycloakdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    networks:
+      - keycloak
+    ports:
+      - '7433:5432'
+  api:
+    container_name: homework-api
+    build:
+      context: .
+      dockerfile: api.Dockerfile
+    image: homework-api
+    depends_on:
+      - db
+    ports:
+      - '8081:8080'
+    environment: 
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://homeworkdb:5432/demodb
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=password
+    networks: 
+      - homework
+  ui:
+    build:
+      dockerfile: ui.Dockerfile
+      context: .
+    ports:
+      - 4200:80
+    container_name: ui-demo
+  rabbit:
+    image: rabbitmq:3-management-alpine
+    container_name: homework-rabbitmq
+    hostname: rabbit
+    ports:
+      - '15672:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbit
+      - RABBITMQ_DEFAULT_PASS=password
+  keycloak:
+    image: quay.io/keycloak/keycloak:legacy
+    container_name: keycloak-api-services
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: password
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: Pa55w0rd
+    networks:
+      - keycloak
+    ports:
+      - '8080:8080'
+      - '8443:8080'
+    depends_on:
+      - postgres
+volumes:
+  homeworkData:
+    driver: local
+  db:
+    driver: local
+  postgres_data:
+    driver: local
+networks:
+  homework:
+    external: true
+  keycloak:
+    external: true
+  
